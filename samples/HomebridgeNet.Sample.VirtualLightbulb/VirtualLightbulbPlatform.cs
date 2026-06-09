@@ -75,7 +75,8 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
         // Demonstrate pushing updates from a background thread using the cached handle.
         _flicker = new Timer(_ =>
         {
-            _brightness = _brightness >= 100 ? 1 : _brightness + 25;
+            // Cycle 1..100 in steps of 25 without ever exceeding HAP's max of 100.
+            _brightness = _brightness >= 100 ? 1 : Math.Min(_brightness + 25, 100);
             _brightnessChar?.UpdateValue(_brightness);
             Log.Debug($"background brightness -> {_brightness}");
         }, state: null, dueTime: TimeSpan.FromSeconds(5), period: TimeSpan.FromSeconds(5));

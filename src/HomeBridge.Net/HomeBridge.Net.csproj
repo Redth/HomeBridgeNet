@@ -10,6 +10,14 @@
     <!-- The framework carries the ONLY [JSExport] (PluginHost). The generator emits the node-api
          module + .d.ts for it. Author plugins reference this package and stay free of JSExport. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+    <!-- NuGet packaging -->
+    <PackageId>HomeBridge.Net</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>HomeBridge.Net</Authors>
+    <Description>Write Homebridge plugins in C#/.NET. Idiomatic interfaces over the Homebridge/HAP API; no JavaScript or node-api types in your code.</Description>
+    <PackageTags>homebridge;homekit;dotnet;csharp;iot;plugin</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

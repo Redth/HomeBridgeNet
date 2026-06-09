@@ -3,6 +3,9 @@ bin/
 obj/
 *.user
 
+# NuGet output
+artifacts/
+
 # Node
 node_modules/
 

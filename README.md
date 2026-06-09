@@ -5,8 +5,19 @@ on Node.js; HomeBridge.Net bridges your C# plugin into it via
 [node-api-dotnet](https://github.com/microsoft/node-api-dotnet) — so you write idiomatic C# and ship
 a normal Homebridge npm plugin, with **no JavaScript and no node-api types in your code**.
 
-> Status: Milestones 1–2 complete and verified under real Homebridge. See `spike/FINDINGS.md` and the
-> plan for the roadmap (build tooling, HAP catalog generation, packaging are next).
+> Status: Milestones 1–6 complete and verified. A C# plugin scaffolded from the template builds into
+> a publishable Homebridge npm package and runs **with no system .NET installed** (proven in a clean
+> `node` container). See `spike/FINDINGS.md` and the plan for details.
+
+## Quick start
+
+```bash
+dotnet new install HomeBridge.Net.Templates      # (local: dotnet new install ./templates/HomeBridge.Net.Plugin)
+dotnet new homebridge-plugin -n MyPlugin
+cd MyPlugin && dotnet build                       # -> bin/Debug/net10.0/homebridge-package/ (npm-ready)
+# To run with no .NET needed by end users, bundle a runtime then `npm pack`:
+bash tools/bundle-runtime/bundle-runtime.sh bin/Debug/net10.0/homebridge-package/dotnet --channel 10.0
+```
 
 ## What a plugin looks like
 
@@ -42,6 +53,11 @@ No `[JSExport]`, no `JSValue`, no `index.js`. The framework owns all of that.
 |-------|-----------|
 | `src/HomeBridge.Net` | The NuGet library: clean C# interfaces (`IDynamicPlatformPlugin`, `IPlatformAccessory`, `ICharacteristic<T>`, …) and the **single** `[JSExport] PluginHost` bootstrap that bridges them to live Homebridge/HAP objects. |
 | `host/homebridgenet-host` | `@homebridgenet/host` — the only JavaScript. Loads the .NET runtime once and adapts any HomeBridge.Net plugin into a Homebridge platform. |
+| `src/HomeBridge.Net.Build` | MSBuild task (+ props/targets) that turns `dotnet build` output into a publishable npm package (`index.js`, `package.json`, `config.schema.json`) from your attributes. |
+| `templates/HomeBridge.Net.Plugin` | `dotnet new homebridge-plugin` project template. |
+| `tools/hap-catalog-gen` | Regenerates the typed HAP catalog from hap-nodejs. |
+| `tools/bundle-runtime` | Bundles a self-contained .NET runtime so end users need no .NET install. |
+| `tools/cleanroom` | Boots the sample under Homebridge in a `node` container with no .NET (the "just works" proof; runs in CI). |
 | `samples/HomebridgeNet.Sample.VirtualLightbulb` | A complete, idiomatic example plugin (a virtual dimmable bulb). |
 | `spike/` | The Milestone 1 de-risking spike (kept as reference). |
 

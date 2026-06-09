@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <!-- Copy HomeBridge.Net.dll + the node-api runtime into the build output so the generated
+         npm package is complete. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Version>1.0.0</Version>
+    <Description>A Homebridge plugin built with HomeBridge.Net.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The facade you write against. -->
+    <PackageReference Include="HomeBridge.Net" Version="0.1.0" />
+    <!-- Build tooling: turns `dotnet build` output into a publishable Homebridge npm package. -->
+    <PackageReference Include="HomeBridge.Net.Build" Version="0.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

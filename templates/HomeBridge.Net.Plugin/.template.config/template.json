@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "HomeBridge.Net",
+  "classifications": [ "Homebridge", "HomeKit", "Plugin", "IoT" ],
+  "identity": "HomeBridge.Net.Plugin.CSharp",
+  "name": "HomeBridge.Net Plugin",
+  "description": "A Homebridge platform plugin written in C#/.NET with HomeBridge.Net.",
+  "shortName": "homebridge-plugin",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "HomebridgeNetPlugin",
+  "preferNameDirectory": true,
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "datatype": "choice",
+      "choices": [ { "choice": "net10.0", "description": ".NET 10" } ],
+      "defaultValue": "net10.0",
+      "replaces": "net10.0"
+    }
+  }
+}

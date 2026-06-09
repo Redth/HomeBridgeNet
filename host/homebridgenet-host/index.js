@@ -13,14 +13,23 @@
 // Everything below is generic — no per-plugin logic. All device behavior lives in the C# plugin,
 // driven through HomeBridge.Net's PluginHost (the framework's only [JSExport] type).
 const path = require('path');
-
-// Select the .NET runtime that matches the framework/plugin TFM. Pinned to net10.0.
-const dotnet = require('node-api-dotnet/net10.0');
+const fs = require('fs');
 
 // The framework module is loaded once per process; subsequent plugins reuse the same CLR + module.
+let dotnet;
 let framework;
 function loadFramework(dotnetDir) {
   if (!framework) {
+    // "Just works" without a system .NET install: if the package bundled a self-contained runtime
+    // (dotnet/runtime/ in DOTNET_ROOT layout), point hostfxr at it BEFORE loading node-api-dotnet.
+    // An explicit DOTNET_ROOT in the environment always wins.
+    const bundledRuntime = path.join(dotnetDir, 'runtime');
+    if (!process.env.DOTNET_ROOT && fs.existsSync(bundledRuntime)) {
+      process.env.DOTNET_ROOT = bundledRuntime;
+    }
+    // Select the .NET runtime that matches the framework/plugin TFM. Pinned to net10.0. Required
+    // lazily (not at module top) so DOTNET_ROOT is set before the CLR is bootstrapped.
+    dotnet = require('node-api-dotnet/net10.0');
     // dotnet.require takes a path WITHOUT extension; HomeBridge.Net.dll ships beside the plugin dll.
     framework = dotnet.require(path.join(dotnetDir, 'HomeBridge.Net'));
   }

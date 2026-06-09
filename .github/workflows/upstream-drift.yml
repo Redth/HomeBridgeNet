@@ -1,0 +1,51 @@
+name: Upstream drift
+
+# Keeps pace with Homebridge / HAP. Weekly (and on demand): regenerate the HAP catalog against the
+# latest hap-nodejs and re-run the clean-room boot against the latest Homebridge.
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  hap-catalog-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - name: Regenerate HAP catalog against latest hap-nodejs
+        run: |
+          cd tools/hap-catalog-gen
+          npm install hap-nodejs@latest --no-save --no-fund --no-audit
+          node generate.js
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build with regenerated catalog
+        run: dotnet build src/HomeBridge.Net -c Release
+      - name: Report drift
+        run: |
+          if git diff --quiet src/HomeBridge.Net/Generated; then
+            echo "No HAP catalog drift."
+          else
+            echo "::warning::HAP catalog changed against latest hap-nodejs — review and commit:"
+            git --no-pager diff --stat src/HomeBridge.Net/Generated
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regenerated-catalog
+          path: src/HomeBridge.Net/Generated/*.g.cs
+
+  cleanroom-latest-homebridge:
+    # The clean-room script installs `homebridge` (latest), so this also catches Homebridge drift.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Boot sample under latest Homebridge (no system .NET)
+        run: bash tools/cleanroom/run-cleanroom.sh --arch x64

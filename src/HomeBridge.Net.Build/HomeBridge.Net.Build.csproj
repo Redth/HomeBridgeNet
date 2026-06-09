@@ -11,9 +11,19 @@
     <!-- Bundle dependency assemblies next to the task dll so MSBuild can load them. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <IsPackable>true</IsPackable>
-    <!-- Microsoft.Build.Utilities.Core is a build-host-provided dependency (ExcludeAssets=runtime),
-         so the flagged transitive vulnerability is never shipped or executed by this task. -->
-    <NoWarn>$(NoWarn);NU1903</NoWarn>
+
+    <!-- Tools-only package: the task dll goes to tasks/, not lib/; ship props/targets in build/. -->
+    <PackageId>HomeBridge.Net.Build</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>HomeBridge.Net</Authors>
+    <Description>Build tooling for HomeBridge.Net: turns a built C#/.NET plugin into a ready-to-publish Homebridge npm package (package.json, config.schema.json, index.js) from [HomebridgePlugin]/[ConfigProperty] attributes.</Description>
+    <PackageTags>homebridge;homekit;dotnet;msbuild;build;plugin</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <!-- NU1903: build-host dep (see below). NU5100/NU5128: tools package has no lib/ or deps. -->
+    <NoWarn>$(NoWarn);NU1903;NU5100;NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,5 +32,23 @@
     <!-- Reflection-only metadata reading (no executing/locking the plugin assembly). -->
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.0" />
   </ItemGroup>
+
+  <!-- Pack the .props/.targets and the task dll + its runtime deps into the NuGet's build/ + tasks/. -->
+  <ItemGroup>
+    <None Include="build/HomeBridge.Net.Build.props" Pack="true" PackagePath="build/" />
+    <None Include="build/HomeBridge.Net.Build.targets" Pack="true" PackagePath="build/" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackTaskAssemblies</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="PackTaskAssemblies" DependsOnTargets="Build">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)*.dll">
+        <PackagePath>tasks/netstandard2.0/</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
 
 </Project>

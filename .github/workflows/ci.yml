@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build
+        run: dotnet build -c Release
+      - name: Pack
+        run: |
+          dotnet pack src/HomeBridge.Net -c Release -o artifacts
+          dotnet pack src/HomeBridge.Net.Build -c Release -o artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkgs
+          path: artifacts/*.nupkg
+
+  cleanroom:
+    # Proves a HomeBridge.Net plugin runs with NO system .NET: boots the sample under Homebridge
+    # inside a plain node container using only the bundled runtime.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Clean-room boot (no .NET in the container)
+        run: bash tools/cleanroom/run-cleanroom.sh --arch x64
