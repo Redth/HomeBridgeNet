@@ -1,0 +1,12 @@
+{
+  "name": "hap-catalog-gen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generates HomeBridge.Net's typed Services/Characteristics catalog from hap-nodejs metadata.",
+  "bin": {
+    "hap-catalog-gen": "generate.js"
+  },
+  "dependencies": {
+    "hap-nodejs": "0.11.2"
+  }
+}
