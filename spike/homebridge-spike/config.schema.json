@@ -1,0 +1,17 @@
+{
+  "pluginAlias": "HomeBridgeNetSpike",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "HomeBridge.Net spike — a C#/.NET-backed platform plugin.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "Spike Test"
+      }
+    }
+  }
+}

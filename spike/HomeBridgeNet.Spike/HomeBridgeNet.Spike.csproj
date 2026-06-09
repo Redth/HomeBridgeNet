@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Class library loaded into Node's process by node-api-dotnet (dynamic/CLR-hosted model). -->
+    <RootNamespace>HomeBridgeNet.Spike</RootNamespace>
+    <AssemblyName>HomeBridgeNet.Spike</AssemblyName>
+    <!-- Copy package deps next to the dll so the npm folder is self-contained for the spike. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pinned to match npm node-api-dotnet@0.9.21 (runtime ABI must align). -->
+    <PackageReference Include="Microsoft.JavaScript.NodeApi" Version="0.9.21" />
+    <PackageReference Include="Microsoft.JavaScript.NodeApi.Generator" Version="0.9.21" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

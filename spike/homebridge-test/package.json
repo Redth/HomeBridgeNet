@@ -1,0 +1,11 @@
+{
+  "name": "homebridge-net-spike-harness",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mock-api harness to de-risk node-api-dotnet interop for HomeBridge.Net",
+  "dependencies": {
+    "homebridge": "^1.6.1",
+    "homebridge-spike": "file:../homebridge-spike",
+    "node-api-dotnet": "0.9.21"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@homebridgenet/host",
+  "version": "0.1.0",
+  "description": "Glue layer that loads a HomeBridge.Net (C#/.NET) plugin into Homebridge via node-api-dotnet. The only JavaScript a HomeBridge.Net plugin ships.",
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "node-api-dotnet": "0.9.21"
+  }
+}

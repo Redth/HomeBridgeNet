@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Node
+node_modules/
+
+# Spike: generated/copied artifacts and Homebridge runtime state
+spike/homebridge-spike/dotnet/
+spike/homebridge-test/hb-storage/
+spike/homebridge-test/hb.log
+
+# Sample run harness: copied dlls + Homebridge runtime state
+samples/_run/homebridge-net-sample/dotnet/
+samples/_run/hb-storage/
+samples/_run/*.log
+samples/_run/package.json
+samples/_run/package-lock.json
