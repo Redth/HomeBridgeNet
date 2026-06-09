@@ -3,6 +3,19 @@ using HomeBridge.Net;
 namespace HomebridgeNet.Sample.VirtualLightbulb;
 
 /// <summary>
+/// Strongly-typed config bound from the user's config.json via <c>Config.Bind&lt;BulbConfig&gt;()</c>.
+/// The [ConfigProperty] attributes drive the generated config.schema.json (the Homebridge UI form).
+/// </summary>
+public sealed class BulbConfig
+{
+    [ConfigProperty(Title = "Bulb name", Description = "Display name for the virtual bulb")]
+    public string BulbName { get; set; } = "C# Virtual Bulb";
+
+    [ConfigProperty(Title = "Initial brightness", Description = "Brightness at startup (1-100)", Default = 100)]
+    public int StartBrightness { get; set; } = 100;
+}
+
+/// <summary>
 /// A complete Homebridge platform plugin written in plain C#. Note what's NOT here: no [JSExport],
 /// no JSValue, no node-api types, no JavaScript. Just the HomeBridge.Net facade.
 /// </summary>
@@ -27,9 +40,13 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
 
     private const string BulbSeed = "virtual-bulb-1";
 
+    private readonly BulbConfig _config;
+
     public VirtualLightbulbPlatform(IPluginContext context) : base(context)
     {
-        Log.Info("VirtualLightbulbPlatform constructed");
+        _config = Config.Bind<BulbConfig>();
+        _brightness = _config.StartBrightness;
+        Log.Info($"VirtualLightbulbPlatform constructed (bulb '{_config.BulbName}', start brightness {_config.StartBrightness})");
     }
 
     public override void ConfigureAccessory(IPlatformAccessory accessory)
@@ -50,7 +67,7 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
         }
         else
         {
-            IPlatformAccessory accessory = CreateAccessory("C# Virtual Bulb", BulbSeed);
+            IPlatformAccessory accessory = CreateAccessory(_config.BulbName, BulbSeed);
             WireUp(accessory);
             RegisterAccessories(accessory);
         }

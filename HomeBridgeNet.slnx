@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/HomeBridge.Net/HomeBridge.Net.csproj" />
+    <Project Path="src/HomeBridge.Net.Build/HomeBridge.Net.Build.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/HomebridgeNet.Sample.VirtualLightbulb/HomebridgeNet.Sample.VirtualLightbulb.csproj" />

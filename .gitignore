@@ -17,3 +17,6 @@ samples/_run/hb-storage/
 samples/_run/*.log
 samples/_run/package.json
 samples/_run/package-lock.json
+
+# Generated-package run harness (built artifacts; fully reproducible from `dotnet build`)
+samples/_run2/

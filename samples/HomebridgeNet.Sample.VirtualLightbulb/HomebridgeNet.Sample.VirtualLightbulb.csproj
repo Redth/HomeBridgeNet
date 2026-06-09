@@ -13,4 +13,14 @@
     <ProjectReference Include="..\..\src\HomeBridge.Net\HomeBridge.Net.csproj" />
   </ItemGroup>
 
+  <!-- Dev wiring for the build tooling. A real plugin gets this from the HomeBridge.Net.Build
+       NuGet package automatically; here we point at the locally-built task and import its targets. -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Description>Sample Homebridge platform plugin implemented in C#/.NET with HomeBridge.Net.</Description>
+    <HomeBridgeNetBuildTasksAssembly>$(MSBuildThisFileDirectory)..\..\src\HomeBridge.Net.Build\bin\Debug\netstandard2.0\HomeBridge.Net.Build.Tasks.dll</HomeBridgeNetBuildTasksAssembly>
+  </PropertyGroup>
+  <Import Project="..\..\src\HomeBridge.Net.Build\build\HomeBridge.Net.Build.props" />
+  <Import Project="..\..\src\HomeBridge.Net.Build\build\HomeBridge.Net.Build.targets" />
+
 </Project>

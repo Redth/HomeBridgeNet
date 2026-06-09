@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- MSBuild tasks load into both .NET (dotnet build) and .NET Framework (VS) MSBuild. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>HomeBridge.Net.Build</RootNamespace>
+    <AssemblyName>HomeBridge.Net.Build.Tasks</AssemblyName>
+    <!-- Bundle dependency assemblies next to the task dll so MSBuild can load them. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <IsPackable>true</IsPackable>
+    <!-- Microsoft.Build.Utilities.Core is a build-host-provided dependency (ExcludeAssets=runtime),
+         so the flagged transitive vulnerability is never shipped or executed by this task. -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MSBuild API: provided by the host, never shipped with the task. -->
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" PrivateAssets="all" ExcludeAssets="runtime" />
+    <!-- Reflection-only metadata reading (no executing/locking the plugin assembly). -->
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

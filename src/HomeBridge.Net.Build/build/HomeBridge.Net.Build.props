@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <PropertyGroup>
+    <!-- Path to the task assembly. Defaults to the NuGet 'tasks/' layout; overridable for dev. -->
+    <HomeBridgeNetBuildTasksAssembly Condition="'$(HomeBridgeNetBuildTasksAssembly)' == ''">$(MSBuildThisFileDirectory)../tasks/netstandard2.0/HomeBridge.Net.Build.Tasks.dll</HomeBridgeNetBuildTasksAssembly>
+
+    <!-- Produce the npm package after each build. Set false to opt out. -->
+    <GenerateHomebridgePackage Condition="'$(GenerateHomebridgePackage)' == ''">true</GenerateHomebridgePackage>
+
+    <!-- Where the ready-to-publish npm package is staged. Left empty here on purpose: it depends on
+         $(TargetDir), which is only known at build time, so the default is computed inside the
+         target (see HomeBridge.Net.Build.targets). Set it explicitly to override. -->
+  </PropertyGroup>
+
+</Project>

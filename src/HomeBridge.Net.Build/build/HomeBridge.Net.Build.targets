@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <UsingTask TaskName="HomeBridge.Net.Build.GenerateHomebridgePluginPackage"
+             AssemblyFile="$(HomeBridgeNetBuildTasksAssembly)" />
+
+  <!--
+    Stages a publishable npm package (index.js, package.json, config.schema.json, dotnet/*.dll)
+    from the built plugin assembly. Runs after Build by default; from the package directory the
+    author then runs `npm pack` / `npm publish`.
+  -->
+  <Target Name="PackHomebridgePlugin"
+          AfterTargets="Build"
+          Condition="'$(GenerateHomebridgePackage)' == 'true'">
+
+    <!-- Compute the default staging dir here (not in props) so $(TargetDir) is resolved, and use
+         Path.Combine so the separator is correct on every OS. -->
+    <PropertyGroup>
+      <HomebridgePackageDir Condition="'$(HomebridgePackageDir)' == ''">$([System.IO.Path]::Combine('$(TargetDir)', 'homebridge-package'))</HomebridgePackageDir>
+    </PropertyGroup>
+
+    <GenerateHomebridgePluginPackage
+        PluginAssembly="$(TargetPath)"
+        OutputDirectory="$(TargetDir)"
+        StagingDirectory="$(HomebridgePackageDir)"
+        PackageVersion="$(Version)"
+        Description="$(Description)">
+      <Output TaskParameter="GeneratedFiles" ItemName="HomebridgePackageFiles" />
+    </GenerateHomebridgePluginPackage>
+
+    <Message Importance="high" Text="HomeBridge.Net: npm package staged at $(HomebridgePackageDir)" />
+  </Target>
+
+</Project>
