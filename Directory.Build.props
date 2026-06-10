@@ -7,8 +7,8 @@
     <Authors>HomeBridge.Net</Authors>
     <Company>HomeBridge.Net</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/redth/HomeBridgeNet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/redth/HomeBridgeNet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Redth/HomeBridgeNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Redth/HomeBridgeNet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
