@@ -51,23 +51,61 @@ namespace HomeBridge.Net;
 `;
 }
 
+function pascalFromUpperSnake(s) {
+  return s.split('_')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
+}
+
+// A characteristic with named integer constants on its class (e.g. OFF=0, HEAT=1, ...) becomes a
+// typed C# enum named after the characteristic. Returns the enum members or null.
+function enumMembersFor(ctor) {
+  const members = [];
+  const seen = new Set();
+  for (const sk of Object.getOwnPropertyNames(ctor)) {
+    const v = ctor[sk];
+    // HAP value constants are ALL-CAPS integer statics (excludes UUID which is a string).
+    if (typeof v === 'number' && Number.isInteger(v) && sk === sk.toUpperCase() && /[A-Z]/.test(sk)) {
+      let name = ident(pascalFromUpperSnake(sk));
+      if (seen.has(name)) continue;
+      seen.add(name);
+      members.push({ name, value: v });
+    }
+  }
+  return members.length >= 1 ? members : null;
+}
+
+const INT_FORMATS = new Set(['int', 'uint8', 'uint16', 'uint32']);
+
 // ---- Characteristics -----------------------------------------------------
 const Ch = hap.Characteristic;
 const chars = [];
+const enums = [];
 let chSkipped = 0;
 for (const key of Object.keys(Ch).filter(k => typeof Ch[k] === 'function')) {
+  const ctor = Ch[key];
   let format;
   try {
-    const inst = new Ch[key]();
+    const inst = new ctor();
     format = inst.props && inst.props.format;
   } catch {
     chSkipped++;
     continue;
   }
   if (!format) { chSkipped++; continue; }
-  chars.push({ key, type: clrType(format) });
+
+  let members = INT_FORMATS.has(format) ? enumMembersFor(ctor) : null;
+  if (members) {
+    const enumName = ident(key);
+    enums.push({ name: enumName, members });
+    chars.push({ key, type: enumName });
+  } else {
+    chars.push({ key, type: clrType(format) });
+  }
 }
 chars.sort((a, b) => a.key.localeCompare(b.key));
+enums.sort((a, b) => a.name.localeCompare(b.name));
 
 let chOut = header('characteristics', chars.length) +
   `\n/// <summary>Built-in HAP characteristic types, typed by value. Resolved by name at runtime.</summary>\n` +
@@ -76,6 +114,20 @@ for (const c of chars) {
   chOut += `    public static readonly CharacteristicType<${c.type}> ${ident(c.key)} = new("${c.key}");\n`;
 }
 chOut += `}\n`;
+
+// ---- Characteristic enums ------------------------------------------------
+let enumOut = header('characteristic enums', enums.length) +
+  `\n`;
+for (const e of enums) {
+  const maxVal = Math.max(...e.members.map(m => m.value));
+  const underlying = maxVal > 2147483647 ? ' : long' : '';
+  enumOut += `/// <summary>Allowed values for the <c>${e.name}</c> characteristic.</summary>\n`;
+  enumOut += `public enum ${e.name}${underlying}\n{\n`;
+  for (const m of e.members) {
+    enumOut += `    ${m.name} = ${m.value},\n`;
+  }
+  enumOut += `}\n\n`;
+}
 
 // ---- Services ------------------------------------------------------------
 const Sv = hap.Service;
@@ -91,9 +143,11 @@ svOut += `}\n`;
 
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'Characteristics.g.cs'), chOut);
+fs.writeFileSync(path.join(outDir, 'CharacteristicEnums.g.cs'), enumOut);
 fs.writeFileSync(path.join(outDir, 'Services.g.cs'), svOut);
 
 console.log(`hap-nodejs ${hapVersion}`);
+console.log(`  ${enums.length} characteristic enums written`);
 console.log(`  ${chars.length} characteristics written (${chSkipped} skipped: no parameterless ctor / no format)`);
 console.log(`  ${services.length} services written`);
 console.log(`  -> ${outDir}`);

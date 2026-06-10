@@ -40,6 +40,11 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
 
     private const string BulbSeed = "virtual-bulb-1";
 
+    // Thermostat state — demonstrates strongly-typed HAP enums.
+    private TargetHeatingCoolingState _mode = TargetHeatingCoolingState.Auto;
+    private double _targetTemp = 21.0;
+    private double _currentTemp = 19.5;
+
     private readonly BulbConfig _config;
 
     public VirtualLightbulbPlatform(IPluginContext context) : base(context)
@@ -72,6 +77,9 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
             RegisterAccessories(accessory);
         }
 
+        // Also expose a virtual thermostat — demonstrates strongly-typed HAP enum characteristics.
+        EnsureThermostat();
+
         // Demonstrate pushing updates from a background thread using the cached handle.
         _flicker = new Timer(_ =>
         {
@@ -80,6 +88,32 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
             _brightnessChar?.UpdateValue(_brightness);
             Log.Debug($"background brightness -> {_brightness}");
         }, state: null, dueTime: TimeSpan.FromSeconds(5), period: TimeSpan.FromSeconds(5));
+    }
+
+    private void EnsureThermostat()
+    {
+        string uuid = Api.GenerateUuid("virtual-thermostat-1");
+        IPlatformAccessory accessory = _restored.TryGetValue(uuid, out IPlatformAccessory? cached)
+            ? cached
+            : CreateAccessory("C# Virtual Thermostat", "virtual-thermostat-1");
+
+        IService thermostat = accessory.GetOrAddService(Services.Thermostat);
+
+        // HAP enum characteristics are strongly typed — no magic numbers.
+        thermostat.GetCharacteristic(Characteristics.TargetHeatingCoolingState)
+            .OnGet(() => _mode)
+            .OnSet(value => { _mode = value; Log.Info($"thermostat mode -> {value}"); });
+        thermostat.GetCharacteristic(Characteristics.CurrentHeatingCoolingState)
+            .OnGet(() => _mode == TargetHeatingCoolingState.Off ? CurrentHeatingCoolingState.Off : CurrentHeatingCoolingState.Heat);
+        thermostat.GetCharacteristic(Characteristics.TargetTemperature)
+            .OnGet(() => _targetTemp)
+            .OnSet(value => { _targetTemp = value; Log.Info($"target temp -> {value}°C"); });
+        thermostat.GetCharacteristic(Characteristics.CurrentTemperature).OnGet(() => _currentTemp);
+        thermostat.GetCharacteristic(Characteristics.TemperatureDisplayUnits)
+            .OnGet(() => TemperatureDisplayUnits.Celsius);
+
+        if (!_restored.ContainsKey(uuid))
+            RegisterAccessories(accessory);
     }
 
     protected override void OnShutdown()

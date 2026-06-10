@@ -52,21 +52,31 @@ internal sealed class JsRuntime
 /// <summary>Converts between supported .NET characteristic value types and <see cref="JSValue"/>.</summary>
 internal static class JsConvert
 {
-    public static JSValue ToJs<T>(T value) => value switch
+    public static JSValue ToJs<T>(T value)
     {
-        null => JSValue.Null,
-        bool b => b,
-        int i => i,
-        long l => l,
-        double d => d,
-        float f => f,
-        string s => s,
-        _ => throw new NotSupportedException($"Cannot marshal '{typeof(T)}' to a HomeKit value."),
-    };
+        // HAP enums (e.g. TargetHeatingCoolingState) marshal as their integer value.
+        if (typeof(T).IsEnum)
+            return JSValue.CreateNumber(Convert.ToInt32((object)value!));
+
+        return value switch
+        {
+            null => JSValue.Null,
+            bool b => b,
+            int i => i,
+            long l => l,
+            double d => d,
+            float f => f,
+            string s => s,
+            _ => throw new NotSupportedException($"Cannot marshal '{typeof(T)}' to a HomeKit value."),
+        };
+    }
 
     public static T FromJs<T>(JSValue value)
     {
         Type t = typeof(T);
+        if (t.IsEnum)
+            return (T)Enum.ToObject(t, value.GetValueInt32());
+
         object result =
             t == typeof(bool) ? value.GetValueBool() :
             t == typeof(int) ? value.GetValueInt32() :
