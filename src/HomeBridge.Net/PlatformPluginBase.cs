@@ -30,9 +30,20 @@ public abstract class DynamicPlatformPlugin : IDynamicPlatformPlugin
     protected IPlatformAccessory CreateAccessory(string displayName, string uuidSeed)
         => Api.CreateAccessory(displayName, uuidSeed);
 
+    /// <summary>Creates a new accessory with a HomeKit category (e.g. Television, Camera).</summary>
+    protected IPlatformAccessory CreateAccessory(string displayName, string uuidSeed, AccessoryCategory category)
+        => Api.CreateAccessory(displayName, uuidSeed, category);
+
     /// <summary>Registers accessories with Homebridge.</summary>
     protected void RegisterAccessories(params IPlatformAccessory[] accessories)
         => Api.RegisterAccessories(accessories);
+
+    /// <summary>
+    /// Publishes accessories as external (standalone) accessories — required for Televisions and
+    /// cameras, which HomeKit exposes outside the bridge and pairs separately in the Home app.
+    /// </summary>
+    protected void PublishExternalAccessories(params IPlatformAccessory[] accessories)
+        => Api.PublishExternalAccessories(accessories);
 
     /// <summary>Removes accessories from Homebridge.</summary>
     protected void UnregisterAccessories(params IPlatformAccessory[] accessories)

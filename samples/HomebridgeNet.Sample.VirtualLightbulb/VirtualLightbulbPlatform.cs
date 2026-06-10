@@ -3,6 +3,28 @@ using HomeBridge.Net;
 namespace HomebridgeNet.Sample.VirtualLightbulb;
 
 /// <summary>
+/// A trivial camera source that always returns the same embedded 1x1 JPEG. A real plugin would
+/// fetch a frame from the device. Demonstrates wiring a camera; live streaming is not implemented.
+/// </summary>
+public sealed class PlaceholderCamera : ICameraSource
+{
+    // A minimal valid JPEG (1x1). A real camera would return an actual frame at the requested size.
+    private static readonly byte[] Jpeg = Convert.FromBase64String(
+        "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a" +
+        "HBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAA" +
+        "AQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIh" +
+        "MUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpT" +
+        "VFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5" +
+        "usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAA" +
+        "AAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEI" +
+        "FEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVm" +
+        "Z2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK" +
+        "0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q==");
+
+    public Task<byte[]> GetSnapshotAsync(int width, int height) => Task.FromResult(Jpeg);
+}
+
+/// <summary>
 /// Strongly-typed config bound from the user's config.json via <c>Config.Bind&lt;BulbConfig&gt;()</c>.
 /// The [ConfigProperty] attributes drive the generated config.schema.json (the Homebridge UI form).
 /// </summary>
@@ -45,6 +67,10 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
     private double _targetTemp = 21.0;
     private double _currentTemp = 19.5;
 
+    // Television state — demonstrates categories, external accessories, and linked input sources.
+    private Active _tvActive = Active.Inactive;
+    private int _tvInput = 1;
+
     private readonly BulbConfig _config;
 
     public VirtualLightbulbPlatform(IPluginContext context) : base(context)
@@ -80,6 +106,12 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
         // Also expose a virtual thermostat — demonstrates strongly-typed HAP enum characteristics.
         EnsureThermostat();
 
+        // And a virtual TV — demonstrates accessory categories, external publishing, linked services.
+        EnsureTelevision();
+
+        // And a virtual camera — demonstrates the camera controller (snapshot-capable).
+        EnsureCamera();
+
         // Demonstrate pushing updates from a background thread using the cached handle.
         _flicker = new Timer(_ =>
         {
@@ -114,6 +146,47 @@ public sealed class VirtualLightbulbPlatform : DynamicPlatformPlugin
 
         if (!_restored.ContainsKey(uuid))
             RegisterAccessories(accessory);
+    }
+
+    private void EnsureTelevision()
+    {
+        // Televisions are standalone (external) accessories with the Television category.
+        IPlatformAccessory tv = CreateAccessory("C# Virtual TV", "virtual-tv-1", AccessoryCategory.Television);
+
+        IService television = tv.GetOrAddService(Services.Television);
+        television.SetCharacteristic(Characteristics.ConfiguredName, "C# TV");
+        television.SetCharacteristic(Characteristics.SleepDiscoveryMode, SleepDiscoveryMode.AlwaysDiscoverable);
+        television.GetCharacteristic(Characteristics.Active)
+            .OnGet(() => _tvActive)
+            .OnSet(value => { _tvActive = value; Log.Info($"TV {value}"); });
+        television.GetCharacteristic(Characteristics.ActiveIdentifier)
+            .OnGet(() => _tvInput)
+            .OnSet(value => { _tvInput = value; Log.Info($"TV input -> {value}"); });
+        television.GetCharacteristic(Characteristics.RemoteKey)
+            .OnSet(key => Log.Info($"TV remote key: {key}"));
+
+        // Input sources are separate services linked to the Television service.
+        string[] inputs = { "HDMI 1", "HDMI 2", "Netflix" };
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            int id = i + 1;
+            IService input = tv.GetOrAddService(Services.InputSource, inputs[i], $"input{id}");
+            input.SetCharacteristic(Characteristics.Identifier, id)
+                 .SetCharacteristic(Characteristics.ConfiguredName, inputs[i])
+                 .SetCharacteristic(Characteristics.IsConfigured, IsConfigured.Configured)
+                 .SetCharacteristic(Characteristics.InputSourceType, InputSourceType.Hdmi)
+                 .SetCharacteristic(Characteristics.CurrentVisibilityState, CurrentVisibilityState.Shown);
+            television.AddLinkedService(input);
+        }
+
+        PublishExternalAccessories(tv);
+    }
+
+    private void EnsureCamera()
+    {
+        IPlatformAccessory camera = CreateAccessory("C# Virtual Camera", "virtual-camera-1", AccessoryCategory.Camera);
+        camera.ConfigureCameraController(new PlaceholderCamera());
+        PublishExternalAccessories(camera);
     }
 
     protected override void OnShutdown()

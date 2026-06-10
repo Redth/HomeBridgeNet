@@ -38,11 +38,17 @@ public interface IHomebridgeApi
     /// <summary>Creates a new platform accessory (display name + a UUID seed that is hashed for you).</summary>
     IPlatformAccessory CreateAccessory(string displayName, string uuidSeed);
 
+    /// <summary>Creates a new platform accessory with a HomeKit category (e.g. Television, Camera).</summary>
+    IPlatformAccessory CreateAccessory(string displayName, string uuidSeed, AccessoryCategory category);
+
     /// <summary>Registers accessories with Homebridge so they appear in HomeKit.</summary>
     void RegisterAccessories(IEnumerable<IPlatformAccessory> accessories);
 
     /// <summary>Removes previously-registered accessories.</summary>
     void UnregisterAccessories(IEnumerable<IPlatformAccessory> accessories);
+
+    /// <summary>Publishes accessories as external/standalone (required for Televisions and cameras).</summary>
+    void PublishExternalAccessories(IEnumerable<IPlatformAccessory> accessories);
 
     /// <summary>Raised once Homebridge has finished launching and restored cached accessories.</summary>
     event Action DidFinishLaunching;
@@ -78,6 +84,19 @@ public interface IPlatformAccessory
 
     /// <summary>Returns the service of the given type, adding it if not present.</summary>
     IService GetOrAddService(ServiceType type);
+
+    /// <summary>
+    /// Returns (adding if needed) a named service instance identified by <paramref name="subtype"/>.
+    /// Use for accessories that need multiple services of the same type (e.g. a TV's input sources).
+    /// </summary>
+    IService GetOrAddService(ServiceType type, string name, string subtype);
+
+    /// <summary>
+    /// Attaches a HAP camera controller backed by <paramref name="source"/>. Use on an accessory
+    /// created with <see cref="AccessoryCategory.Camera"/> and published via
+    /// <c>PublishExternalAccessories</c>. See <see cref="ICameraSource"/> for streaming caveats.
+    /// </summary>
+    void ConfigureCameraController(ICameraSource source);
 }
 
 /// <summary>
@@ -96,6 +115,9 @@ public interface IService
 
     /// <summary>Sets a characteristic's static value (no read handler).</summary>
     IService SetCharacteristic<T>(CharacteristicType<T> type, T value);
+
+    /// <summary>Links another service to this one (e.g. a TV's input sources to its Television service).</summary>
+    IService AddLinkedService(IService linked);
 }
 
 /// <summary>A strongly-typed HomeKit characteristic with read/write handlers and push updates.</summary>
@@ -137,4 +159,19 @@ public interface IAccessoryPlugin
 {
     /// <summary>Returns the services exposed by this accessory.</summary>
     IReadOnlyList<IService> GetServices();
+}
+
+/// <summary>
+/// Provides camera images to HomeKit. Implement on a class and attach it to a Camera accessory via
+/// <see cref="IPlatformAccessory.ConfigureCameraController"/>.
+/// <para>
+/// Snapshots (still JPEGs) are fully supported. Live RTP streaming requires a media backend
+/// (e.g. ffmpeg) and is not provided by HomeBridge.Net out of the box — until added, stream requests
+/// are declined and the Home app shows the latest snapshot.
+/// </para>
+/// </summary>
+public interface ICameraSource
+{
+    /// <summary>Returns a JPEG snapshot at (or near) the requested size.</summary>
+    Task<byte[]> GetSnapshotAsync(int width, int height);
 }

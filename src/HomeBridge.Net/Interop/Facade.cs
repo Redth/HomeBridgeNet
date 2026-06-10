@@ -144,6 +144,12 @@ internal sealed class JsService : IService
         Raw.CallMethod("setCharacteristic", _rt.CharacteristicType(type.Name), JsConvert.ToJs(value));
         return this;
     }
+
+    public IService AddLinkedService(IService linked)
+    {
+        Raw.CallMethod("addLinkedService", ((JsService)linked).Raw);
+        return this;
+    }
 }
 
 /// <summary>Wraps the HAP AccessoryInformation service for fluent setup.</summary>
@@ -212,11 +218,107 @@ internal sealed class JsPlatformAccessory : IPlatformAccessory
 
     public IService GetOrAddService(ServiceType type) => new JsService(_rt, GetOrAddServiceRaw(type));
 
+    public IService GetOrAddService(ServiceType type, string name, string subtype)
+    {
+        JSValue t = _rt.ServiceType(type.Name);
+        JSValue existing = Raw.CallMethod("getServiceById", t, subtype);
+        JSValue service = existing.IsNullOrUndefined()
+            ? Raw.CallMethod("addService", t, name, subtype)
+            : existing;
+        return new JsService(_rt, service);
+    }
+
     private JSValue GetOrAddServiceRaw(ServiceType type)
     {
         JSValue t = _rt.ServiceType(type.Name);
         JSValue existing = Raw.CallMethod("getService", t);
         return existing.IsNullOrUndefined() ? Raw.CallMethod("addService", t) : existing;
+    }
+
+    public void ConfigureCameraController(ICameraSource source)
+    {
+        JSValue hap = _rt.HapValue;
+
+        // Build the HAP CameraStreamingDelegate as a JS object whose methods forward into C#.
+        JSValue del = JSValue.CreateObject();
+        del.SetProperty("handleSnapshotRequest", JSValue.CreateFunction("handleSnapshotRequest", args =>
+        {
+            JSValue request = args[0];
+            int width = request.GetProperty("width").GetValueInt32();
+            int height = request.GetProperty("height").GetValueInt32();
+            JSReference.TryCreateReference(args[1], isWeak: false, out JSReference? cbRef);
+
+            source.GetSnapshotAsync(width, height).ContinueWith(t => _rt.Thread.Post(() =>
+            {
+                JSValue cb = cbRef!.GetValue();
+                if (t.IsFaulted)
+                    cb.Call(JSValue.Undefined, JSValue.CreateError(null, t.Exception!.GetBaseException().Message));
+                else
+                    cb.Call(JSValue.Undefined, JSValue.Undefined, ToBuffer(t.Result));
+            }));
+            return JSValue.Undefined;
+        }));
+
+        // Live RTP streaming requires a media backend (ffmpeg). Until provided, decline stream setup.
+        JSValue declineStream = JSValue.CreateFunction("declineStream", args =>
+        {
+            args[1].Call(JSValue.Undefined,
+                JSValue.CreateError(null, "Live streaming is not supported by this camera (snapshot only)."));
+            return JSValue.Undefined;
+        });
+        del.SetProperty("prepareStream", declineStream);
+        del.SetProperty("handleStreamRequest", declineStream);
+
+        JSValue options = JSValue.CreateObject();
+        options.SetProperty("cameraStreamCount", 1);
+        options.SetProperty("delegate", del);
+        options.SetProperty("streamingOptions", BuildStreamingOptions());
+
+        JSValue controller = hap.GetProperty("CameraController").CallAsConstructor(options);
+        Raw.CallMethod("configureController", controller);
+    }
+
+    private static JSValue BuildStreamingOptions()
+    {
+        // AES_CM_128_HMAC_SHA1_80 = 0; H264 profiles BASELINE/MAIN/HIGH = 0/1/2; levels = 0/1/2.
+        JSValue crypto = JSValue.CreateArray(1);
+        crypto.SetProperty(0, 0);
+
+        JSValue codec = JSValue.CreateObject();
+        codec.SetProperty("profiles", IntArray(0, 1, 2));
+        codec.SetProperty("levels", IntArray(0, 1, 2));
+
+        JSValue video = JSValue.CreateObject();
+        video.SetProperty("codec", codec);
+        video.SetProperty("resolutions", Resolutions());
+
+        JSValue streaming = JSValue.CreateObject();
+        streaming.SetProperty("supportedCryptoSuites", crypto);
+        streaming.SetProperty("video", video);
+        return streaming;
+    }
+
+    private static JSValue IntArray(params int[] values)
+    {
+        JSValue arr = JSValue.CreateArray(values.Length);
+        for (int i = 0; i < values.Length; i++)
+            arr.SetProperty(i, values[i]);
+        return arr;
+    }
+
+    private static JSValue Resolutions()
+    {
+        int[][] res = { new[] { 320, 240, 15 }, new[] { 640, 480, 30 }, new[] { 1280, 720, 30 }, new[] { 1920, 1080, 30 } };
+        JSValue arr = JSValue.CreateArray(res.Length);
+        for (int i = 0; i < res.Length; i++)
+            arr.SetProperty(i, IntArray(res[i]));
+        return arr;
+    }
+
+    private static JSValue ToBuffer(byte[] bytes)
+    {
+        JSValue arrayBuffer = JSValue.CreateArrayBuffer(bytes);
+        return JSValue.Global["Buffer"].CallMethod("from", arrayBuffer);
     }
 }
 
@@ -265,11 +367,23 @@ internal sealed class JsHomebridgeApi : IHomebridgeApi
         return new JsPlatformAccessory(_rt, accessory);
     }
 
+    public IPlatformAccessory CreateAccessory(string displayName, string uuidSeed, AccessoryCategory category)
+    {
+        string uuid = GenerateUuid(uuidSeed);
+        // new api.platformAccessory(displayName, uuid, category)
+        JSValue accessory = _rt.ApiValue.GetProperty("platformAccessory")
+            .CallAsConstructor(displayName, uuid, (int)category);
+        return new JsPlatformAccessory(_rt, accessory);
+    }
+
     public void RegisterAccessories(IEnumerable<IPlatformAccessory> accessories)
         => _rt.ApiValue.CallMethod("registerPlatformAccessories", _rt.PluginName, _rt.PlatformName, ToJsArray(accessories));
 
     public void UnregisterAccessories(IEnumerable<IPlatformAccessory> accessories)
         => _rt.ApiValue.CallMethod("unregisterPlatformAccessories", _rt.PluginName, _rt.PlatformName, ToJsArray(accessories));
+
+    public void PublishExternalAccessories(IEnumerable<IPlatformAccessory> accessories)
+        => _rt.ApiValue.CallMethod("publishExternalAccessories", _rt.PluginName, ToJsArray(accessories));
 
     private static JSValue ToJsArray(IEnumerable<IPlatformAccessory> accessories)
     {

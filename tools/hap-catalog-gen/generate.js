@@ -141,13 +141,31 @@ for (const s of services) {
 }
 svOut += `}\n`;
 
+// ---- Accessory categories ------------------------------------------------
+const catSeen = new Set();
+const categories = Object.entries(hap.Categories)
+  .filter(([, v]) => typeof v === 'number')
+  .map(([k, v]) => ({ name: ident(pascalFromUpperSnake(k)), value: v }))
+  .filter(c => !catSeen.has(c.name) && catSeen.add(c.name))
+  .sort((a, b) => a.value - b.value);
+
+let catOut = header('accessory categories', categories.length) +
+  `\n/// <summary>HomeKit accessory categories (icon/type hint). Set on a created accessory.</summary>\n` +
+  `public enum AccessoryCategory\n{\n`;
+for (const c of categories) {
+  catOut += `    ${c.name} = ${c.value},\n`;
+}
+catOut += `}\n`;
+
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'Characteristics.g.cs'), chOut);
 fs.writeFileSync(path.join(outDir, 'CharacteristicEnums.g.cs'), enumOut);
 fs.writeFileSync(path.join(outDir, 'Services.g.cs'), svOut);
+fs.writeFileSync(path.join(outDir, 'AccessoryCategory.g.cs'), catOut);
 
 console.log(`hap-nodejs ${hapVersion}`);
 console.log(`  ${enums.length} characteristic enums written`);
+console.log(`  ${categories.length} accessory categories written`);
 console.log(`  ${chars.length} characteristics written (${chSkipped} skipped: no parameterless ctor / no format)`);
 console.log(`  ${services.length} services written`);
 console.log(`  -> ${outDir}`);
