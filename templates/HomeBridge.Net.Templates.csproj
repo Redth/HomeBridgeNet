@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageType>Template</PackageType>
+    <PackageId>HomeBridge.Net.Templates</PackageId>
+    <Title>HomeBridge.Net Templates</Title>
+    <Description>`dotnet new` templates for building Homebridge plugins in C#/.NET with HomeBridge.Net.</Description>
+    <PackageTags>dotnet-new;templates;homebridge;homekit;plugin</PackageTags>
+
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- Template packs ship no lib/ and no compile output. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The template content. Exclude any local build artifacts. -->
+    <Content Include="HomeBridge.Net.Plugin/**/*"
+             Exclude="HomeBridge.Net.Plugin/**/bin/**;HomeBridge.Net.Plugin/**/obj/**" />
+    <Compile Remove="**/*" />
+  </ItemGroup>
+
+</Project>

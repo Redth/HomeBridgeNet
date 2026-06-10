@@ -14,11 +14,8 @@
 
     <!-- Tools-only package: the task dll goes to tasks/, not lib/; ship props/targets in build/. -->
     <PackageId>HomeBridge.Net.Build</PackageId>
-    <Version>0.1.0</Version>
-    <Authors>HomeBridge.Net</Authors>
     <Description>Build tooling for HomeBridge.Net: turns a built C#/.NET plugin into a ready-to-publish Homebridge npm package (package.json, config.schema.json, index.js) from [HomebridgePlugin]/[ConfigProperty] attributes.</Description>
     <PackageTags>homebridge;homekit;dotnet;msbuild;build;plugin</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <DevelopmentDependency>true</DevelopmentDependency>

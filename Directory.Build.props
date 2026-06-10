@@ -1,0 +1,21 @@
+<Project>
+
+  <!-- Shared package metadata. Version is overridden by the release workflow from the git tag
+       (dotnet pack -p:Version=x.y.z). Adjust the URLs below to your actual repository. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>HomeBridge.Net</Authors>
+    <Company>HomeBridge.Net</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/redth/HomeBridgeNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/redth/HomeBridgeNet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- Ship the repo README inside packable NuGets. -->
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>
